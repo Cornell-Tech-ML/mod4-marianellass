@@ -15,6 +15,7 @@ from .tensor_data import TensorData
 from .tensor_functions import (
     EQ,
     LT,
+    GT,
     Add,
     All,
     Copy,
@@ -30,7 +31,6 @@ from .tensor_functions import (
     Sigmoid,
     Sum,
     View,
-    tensor,
 )
 
 if TYPE_CHECKING:
@@ -93,6 +93,16 @@ class Tensor:
             self.name = str(self.unique_id)
 
         self.f = backend
+
+    @property
+    def size(self) -> int:
+        """Returns the size of the tensor."""
+        return self._tensor.size
+
+    @property
+    def dims(self) -> int:
+        """Returns the dimensionality of the tensor."""
+        return self._tensor.dims
 
     def requires_grad_(self, x: bool) -> None:
         self.history = History()
@@ -284,4 +294,97 @@ class Tensor:
         return self._tensor.shape
 
     # Functions
-    raise NotImplementedError("Need to include this file from past assignment.")
+    def __gt__(self, b: TensorLike) -> Tensor:
+        return GT.apply(self, self._ensure_tensor(b))
+
+    def __add__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def __sub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+
+    def __mul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __lt__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self, self._ensure_tensor(b))
+
+    def __eq__(self, b: TensorLike) -> Tensor:
+        return EQ.apply(self, self._ensure_tensor(b))
+
+    def __neg__(self) -> Tensor:
+        return Neg.apply(self)
+
+    def __hash__(self):
+        return hash((self.unique_id, self.shape))
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), self)
+
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self._ensure_tensor(b), self)
+
+    def all(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        """Checks if all elements are True."""
+        if dim is None:
+            return All.apply(self.view(self.size), self._ensure_tensor(0))
+        else:
+            return All.apply(self, self._ensure_tensor(dim))
+
+    def is_close(self, b: TensorLike) -> Tensor:
+        """Checks if this tensor is close to another."""
+        return IsClose.apply(self, self._ensure_tensor(b))
+
+    def sigmoid(self) -> Tensor:
+        """Computes the sigmoid."""
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Tensor:
+        """Computes RelU."""
+        return ReLU.apply(self)
+
+    def log(self) -> Tensor:
+        """Computes the log of each element in the tensor."""
+        return Log.apply(self)
+
+    def exp(self) -> Tensor:
+        """Computes the exp of each element in the tensor."""
+        return Exp.apply(self)
+
+    def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        """Computes the sum along the specified dimension."""
+        if dim is None:
+            return Sum.apply(
+                self.contiguous().view(int(operators.prod(self.shape))),
+                self._ensure_tensor(0),
+            )
+        else:
+            return Sum.apply(self, self._ensure_tensor(dim))
+
+    def mean(self, dim: Optional[int] = None) -> Tensor:
+        """Computes the mean along the specified dimension."""
+        if dim is None:
+            total_elements = operators.prod(self.shape)
+            sum_tensor = self.sum()
+            result = sum_tensor / Tensor.make(
+                [total_elements], (1,), backend=self.backend
+            )
+        else:
+            sum_tensor = self.sum(dim)
+            dim_size = self.shape[dim]
+            result = sum_tensor / Tensor.make([dim_size], (1,), backend=self.backend)
+        return result
+
+    def permute(self, *order: int) -> Tensor:
+        """Rearranges the dimensions of the tensor according to the specified order."""
+        order_tensor = Tensor.make(list(order), (len(order),), backend=self.backend)
+        return Permute.apply(self, order_tensor)
+
+    def view(self, *shape: int) -> Tensor:
+        """Fixes the shape of the tensor to the specified shape."""
+        order_tensor = Tensor.make(list(shape), (len(shape),), backend=self.backend)
+        return View.apply(self, order_tensor)
+
+    def zero_grad_(self) -> None:
+        """Makes gradients zero."""
+        self.grad = None

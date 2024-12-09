@@ -8,17 +8,9 @@ import numpy as np
 from dataclasses import field
 from .autodiff import Context, Variable, backpropagate, central_difference
 from .scalar_functions import (
-    EQ,
-    LT,
-    Add,
-    Exp,
     Inv,
-    Log,
     Mul,
-    Neg,
-    ReLU,
     ScalarFunction,
-    Sigmoid,
 )
 
 ScalarLike = Union[float, int, "Scalar"]
@@ -126,7 +118,19 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        h = self.history
+        if h is None or h.last_fn is None or h.ctx is None:
+            return []
+
+        local_derivatives = h.last_fn._backward(h.ctx, d_output)
+        if not isinstance(local_derivatives, (tuple, list)):
+            local_derivatives = (local_derivatives,)
+
+        return [
+            (parent, derivative)
+            for parent, derivative in zip(h.inputs, local_derivatives)
+            if not parent.is_constant()
+        ]
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
@@ -140,8 +144,6 @@ class Scalar:
         if d_output is None:
             d_output = 1.0
         backpropagate(self, d_output)
-
-    raise NotImplementedError("Need to include this file from past assignment.")
 
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
