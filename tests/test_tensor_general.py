@@ -4,7 +4,7 @@ from typing import Callable, Dict, Iterable, List, Tuple
 import numba
 import numba.cuda
 import pytest
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import DataObject, data, integers, lists, permutations
 
 import minitorch
@@ -306,9 +306,10 @@ if numba.cuda.is_available():
 
 
 @given(data())
-@settings(max_examples=25)
+# @settings(max_examples=25)
 @pytest.mark.parametrize("fn", two_arg)
 @pytest.mark.parametrize("backend", backend_tests)
+@settings(suppress_health_check=(HealthCheck.data_too_large,))
 def test_two_grad_broadcast(
     fn: Tuple[str, Callable[[float, float], float], Callable[[Tensor, Tensor], Tensor]],
     backend: str,
