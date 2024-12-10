@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import minitorch
-
+import math
 from . import operators
 from .autodiff import Context
 
@@ -139,7 +139,7 @@ class Sigmoid(ScalarFunction):
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
         """Apply the sigmoid function to a number."""
-        sig = 1 / (1 + math.exp(-a))
+        sig = 1 / (1 + math.exp(-a))  # noqa: F821
         ctx.save_for_backward(sig)
         return sig
 
