@@ -85,7 +85,7 @@ class Network(minitorch.Module):
         temp = self.linear1.forward(
             pooled.view(pooled.shape[0], 392)
         )
-        temp = minitorch.dropout(temp, 0.25, self.eval)
+        temp = minitorch.dropout(temp, 0.25, self.training)
         temp = self.linear2.forward(temp)
         return minitorch.logsoftmax(temp, dim=1)
 
