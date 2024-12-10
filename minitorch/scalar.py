@@ -103,7 +103,7 @@ class Scalar:
         """True if this variable created by the user (no `last_fn`)"""
         return self.history is not None and self.history.last_fn is None
 
-    def is_constant(self) -> bool:
+    def is_constant(self) -> bool: # noqa: D103, D102
         return self.history is None
 
     @property
@@ -112,7 +112,7 @@ class Scalar:
         assert self.history is not None
         return self.history.inputs
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: # noqa: D103, D102
         h = self.history
         assert h is not None
         assert h.last_fn is not None
@@ -146,7 +146,7 @@ class Scalar:
         backpropagate(self, d_output)
 
 
-def derivative_check(f: Any, *scalars: Scalar) -> None:
+def derivative_check(f: Any, *scalars: Scalar) -> None: # noqa: D103, D102, D417
     """Checks that autodiff works on a python function.
     Asserts False if derivative is incorrect.
 

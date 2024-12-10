@@ -257,7 +257,7 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
         a (Storage): storage for `a` tensor.
         size (int):  length of a.
 
-    """
+    """  # noqa: D301
     BLOCK_DIM = 32
 
     cache = cuda.shared.array(BLOCK_DIM, numba.float64)
@@ -284,6 +284,7 @@ jit_sum_practice = cuda.jit()(_sum_practice)
 
 
 def sum_practice(a: Tensor) -> TensorData:
+    """Sum Practice Function."""
     (size,) = a.shape
     threadsperblock = THREADS_PER_BLOCK
     blockspergrid = (size // THREADS_PER_BLOCK) + 1
@@ -380,7 +381,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         b (Storage): storage for `b` tensor.
         size (int): size of the square
 
-    """
+    """  # noqa: D404
     BLOCK_DIM = 32
     cache_a = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     cache_b = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
@@ -406,6 +407,7 @@ jit_mm_practice = jit(_mm_practice)
 
 
 def mm_practice(a: Tensor, b: Tensor) -> TensorData:
+    """MM practice function."""
     (size, _) = a.shape
     threadsperblock = (THREADS_PER_BLOCK, THREADS_PER_BLOCK)
     blockspergrid = 1
