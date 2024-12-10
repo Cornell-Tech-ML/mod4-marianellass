@@ -8,17 +8,9 @@ import numpy as np
 from dataclasses import field
 from .autodiff import Context, Variable, backpropagate, central_difference
 from .scalar_functions import (
-    EQ,
-    LT,
-    Add,
-    Exp,
     Inv,
-    Log,
     Mul,
-    Neg,
-    ReLU,
     ScalarFunction,
-    Sigmoid,
 )
 
 ScalarLike = Union[float, int, "Scalar"]
@@ -85,6 +77,12 @@ class Scalar:
     def __bool__(self) -> bool:
         return bool(self.data)
 
+    def __add__(self, b: ScalarLike) -> Scalar:
+        if isinstance(b, Scalar):
+            return Scalar(self.data + b.data)
+        else:
+            return Scalar(self.data + b)
+
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
 
@@ -111,7 +109,7 @@ class Scalar:
         """True if this variable created by the user (no `last_fn`)"""
         return self.history is not None and self.history.last_fn is None
 
-    def is_constant(self) -> bool:
+    def is_constant(self) -> bool:  # noqa: D103, D102
         return self.history is None
 
     @property
@@ -120,13 +118,25 @@ class Scalar:
         assert self.history is not None
         return self.history.inputs
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:  # noqa: D103, D102
         h = self.history
         assert h is not None
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        h = self.history
+        if h is None or h.last_fn is None or h.ctx is None:
+            return []
+
+        local_derivatives = h.last_fn._backward(h.ctx, d_output)
+        if not isinstance(local_derivatives, (tuple, list)):
+            local_derivatives = (local_derivatives,)
+
+        return [
+            (parent, derivative)
+            for parent, derivative in zip(h.inputs, local_derivatives)
+            if not parent.is_constant()
+        ]
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
@@ -141,10 +151,8 @@ class Scalar:
             d_output = 1.0
         backpropagate(self, d_output)
 
-    raise NotImplementedError("Need to include this file from past assignment.")
 
-
-def derivative_check(f: Any, *scalars: Scalar) -> None:
+def derivative_check(f: Any, *scalars: Scalar) -> None:  # noqa: D103, D102, D417
     """Checks that autodiff works on a python function.
     Asserts False if derivative is incorrect.
 

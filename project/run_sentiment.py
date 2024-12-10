@@ -34,8 +34,7 @@ class Conv1d(minitorch.Module):
         self.bias = RParam(1, out_channels, 1)
 
     def forward(self, input):
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        return minitorch.conv1d(input, self.weights.value) + self.bias.value
 
 
 class CNNSentimentKim(minitorch.Module):
@@ -61,15 +60,33 @@ class CNNSentimentKim(minitorch.Module):
     ):
         super().__init__()
         self.feature_map_size = feature_map_size
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        self.dropout = dropout
+        self.embedding_size = embedding_size
+
+        self.conv1 = Conv1d(embedding_size, feature_map_size, filter_sizes[0])
+        self.conv2 = Conv1d(embedding_size, feature_map_size, filter_sizes[1])
+        self.conv3 = Conv1d(embedding_size, feature_map_size, filter_sizes[2])
+        self.lin = Linear(self.feature_map_size, 1)
 
     def forward(self, embeddings):
         """
         embeddings tensor: [batch x sentence length x embedding dim]
         """
-        # TODO: Implement for Task 4.5.
-        raise NotImplementedError("Need to implement for Task 4.5")
+        embeddings = embeddings.permute(0, 2, 1)
+        c1 = self.conv1.forward(embeddings).relu()
+        c2 = self.conv2.forward(embeddings).relu()
+        c3 = self.conv3.forward(embeddings).relu()
+
+        max_pool = minitorch.max(c1, 2) + minitorch.max(c2, 2) + minitorch.max(c3, 2)
+
+        layers = self.lin.forward(max_pool.view(max_pool.shape[0], max_pool.shape[1]))
+
+        if self.training:
+            layers = minitorch.nn.dropout(layers, self.dropout)
+
+        output = layers.sigmoid().view(embeddings.shape[0])
+
+        return output
 
 
 # Evaluation helper methods
@@ -141,14 +158,22 @@ class SentenceSentimentTrain:
             model.train()
             train_predictions = []
             batch_size = min(batch_size, n_training_samples)
-            for batch_num, example_num in enumerate(
+
+            for _, example_num in enumerate(
                 range(0, n_training_samples, batch_size)
             ):
+                sentence_batch = X_train[example_num : example_num + batch_size]
+                max_len = max(len(s) for s in sentence_batch)
+                batch_p = []
+                batch_p = [
+                    s + [[0] * len(s[0])] * (max_len - len(s)) if len(s) < max_len else s
+                    for s in sentence_batch
+                ]
+
                 y = minitorch.tensor(
                     y_train[example_num : example_num + batch_size], backend=BACKEND
                 )
-                x = minitorch.tensor(
-                    X_train[example_num : example_num + batch_size], backend=BACKEND
+                x = minitorch.tensor(batch_p, backend=BACKEND
                 )
                 x.requires_grad_(True)
                 y.requires_grad_(True)
@@ -167,9 +192,18 @@ class SentenceSentimentTrain:
 
             # Evaluate on validation set at the end of the epoch
             validation_predictions = []
+            p_val= []
+
             if data_val is not None:
                 (X_val, y_val) = data_val
                 model.eval()
+                max_len = max(len(s) for s in X_val)
+                for x in X_val:
+                    if len(x) < max_len:
+                        padding = [[0] * len(x[0])] * (max_len - len(x))
+                        p_val.append(x + padding)
+                    else:
+                        p_val.append(x)
                 y = minitorch.tensor(
                     y_val,
                     backend=BACKEND,
@@ -255,7 +289,7 @@ def encode_sentiment_data(dataset, pretrained_embeddings, N_train, N_val=0):
 if __name__ == "__main__":
     train_size = 450
     validation_size = 100
-    learning_rate = 0.01
+    learning_rate = 0.05
     max_epochs = 250
 
     (X_train, y_train), (X_val, y_val) = encode_sentiment_data(
