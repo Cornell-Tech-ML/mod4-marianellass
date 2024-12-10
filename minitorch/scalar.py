@@ -77,6 +77,12 @@ class Scalar:
     def __bool__(self) -> bool:
         return bool(self.data)
 
+    def __add__(self, b: ScalarLike) -> Scalar:
+        if isinstance(b, Scalar):
+            return Scalar(self.data + b.data)
+        else:
+            return Scalar(self.data + b)
+
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
 
