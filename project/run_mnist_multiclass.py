@@ -80,7 +80,7 @@ class Network(minitorch.Module):
         # TODO: Implement for Task 4.5.
         self.mid = self.conv1(x).relu()
         self.out = self.conv2(self.mid).relu()
-        
+
         pooled = minitorch.avgpool2d(self.out, (4, 4))
         temp = self.linear1.forward(
             pooled.view(pooled.shape[0], 392)

@@ -1,4 +1,4 @@
-#NEW NN
+# NEW NN
 from typing import Tuple
 
 from . import operators
@@ -40,13 +40,14 @@ def tile(input: Tensor, kernel: Tuple[int, int]) -> Tuple[Tensor, int, int]:
 
     new_height, new_width = height // kh, width // kw
 
-    input  = input.contiguous()
+    input = input.contiguous()
     output = input.view(batch, channel, new_height, kh, new_width, kw)
     output = output.permute(0, 1, 2, 4, 3, 5)
     output = output.contiguous()
     tiled = output.view(batch, channel, new_height, new_width, kh * kw)
 
     return tiled, new_height, new_width
+
 
 def avgpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
     """Perform 2D average pooling on input with kernel."""
@@ -55,15 +56,18 @@ def avgpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
     out = input.mean(4)
     return out.view(batch, channel, new_height, new_width)
 
+
 max_reduce = FastOps.reduce(operators.max, float("-inf"))
+
 
 def argmax(input: Tensor, dim: int) -> Tensor:
     """Compute the argmax."""
     return max_reduce(input, dim) == input
 
+
 class Max(Function):
     """Compute the maximum value."""
-    
+
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         """Computes the forward pass of sum."""
@@ -85,6 +89,7 @@ def max(input: Tensor, dim: Optional[int] = None) -> Tensor:
     else:
         return Max.apply(input, input._ensure_tensor(dim))
 
+
 def softmax(input: Tensor, dim: int) -> Tensor:
     """Take the softmax of an input tensor with a specific dimension."""
     expInput = input.exp()
@@ -93,17 +98,16 @@ def softmax(input: Tensor, dim: int) -> Tensor:
 
 def logsoftmax(input: Tensor, dim: int) -> Tensor:
     """Compute the log of the softmax with a specific dimension."""
-    val = max(input, dim) 
+    val = max(input, dim)
     log_sum_exp = ((input - val).exp()).sum(dim).log()
     logs = input - val - log_sum_exp
     return logs
 
 
-
 def maxpool2d(input: Tensor, kernel: Tuple[int, int]) -> Tensor:
     """Do 2D max pooling using the kernel."""
     output, new_height, new_width = tile(input, kernel)
-    pooled = max(output, dim=4) 
+    pooled = max(output, dim=4)
     return pooled.view(input.shape[0], input.shape[1], new_height, new_width)
 
 

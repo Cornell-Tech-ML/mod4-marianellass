@@ -31,7 +31,7 @@ def test_avg(t: Tensor) -> None:
 @pytest.mark.task4_4
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
-    #diff shapes
+    # diff shapes
     out = minitorch.nn.max(t, 1)
     assert out[0, 0, 0] == max([t[0, x, 0] for x in range(t.shape[1])])
     assert out[1, 0, 0] == max([t[1, x, 0] for x in range(t.shape[1])])

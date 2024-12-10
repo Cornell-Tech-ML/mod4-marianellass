@@ -1,7 +1,6 @@
 # type: ignore
 # Currently pyright doesn't support numba.cuda
 
-from functools import cache
 from typing import Callable, Optional, TypeVar, Any
 
 import numba
@@ -222,14 +221,13 @@ def tensor_zip(
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
 
-
         if i < out_size:
             to_index(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
             broadcast_index(out_index, out_shape, a_shape, a_index)
             broadcast_index(out_index, out_shape, b_shape, b_index)
             j = index_to_position(a_index, a_strides)
-            k= index_to_position(b_index, b_strides)
+            k = index_to_position(b_index, b_strides)
             out[o] = fn(a_storage[j], b_storage[k])
 
     return cuda.jit()(_zip)  # type: ignore
@@ -345,7 +343,6 @@ def tensor_reduce(
             if pos == 0:
                 out[o] = cache[0]
 
-
     return jit(_reduce)  # type: ignore
 
 
@@ -388,17 +385,18 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     j = cuda.threadIdx.y
 
     if i >= size or j >= size:
-        return 
-    
+        return
+
     cache_a[i, j] = a[size * i + j]
     cache_b[i, j] = b[size * i + j]
     cuda.syncthreads()
-    
-    accum = 0.0 
+
+    accum = 0.0
     for k in range(size):
         accum += cache_a[i, k] * cache_b[k, j]
-    
-    out[size*i+j] = accum
+
+    out[size * i + j] = accum
+
 
 jit_mm_practice = jit(_mm_practice)
 

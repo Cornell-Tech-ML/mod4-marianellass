@@ -62,7 +62,7 @@ class CNNSentimentKim(minitorch.Module):
         self.feature_map_size = feature_map_size
         self.dropout = dropout
         self.embedding_size = embedding_size
-        
+
         self.conv1 = Conv1d(embedding_size, feature_map_size, filter_sizes[0])
         self.conv2 = Conv1d(embedding_size, feature_map_size, filter_sizes[1])
         self.conv3 = Conv1d(embedding_size, feature_map_size, filter_sizes[2])
@@ -73,15 +73,15 @@ class CNNSentimentKim(minitorch.Module):
         embeddings tensor: [batch x sentence length x embedding dim]
         """
         embeddings = embeddings.permute(0, 2, 1)
-        c1 = self.conv1.forward(embeddings).relu() 
+        c1 = self.conv1.forward(embeddings).relu()
         c2 = self.conv2.forward(embeddings).relu()
-        c3 = self.conv3.forward(embeddings).relu() 
-        
+        c3 = self.conv3.forward(embeddings).relu()
+
         max_pool = minitorch.max(c1, 2) + minitorch.max(c2, 2) + minitorch.max(c3, 2)
 
         layers = self.lin.forward(max_pool.view(max_pool.shape[0], max_pool.shape[1]))
-        
-        if self.training: 
+
+        if self.training:
             layers = minitorch.nn.dropout(layers, self.dropout)
 
         output = layers.sigmoid().view(embeddings.shape[0])
@@ -158,7 +158,7 @@ class SentenceSentimentTrain:
             model.train()
             train_predictions = []
             batch_size = min(batch_size, n_training_samples)
-            
+
             for _, example_num in enumerate(
                 range(0, n_training_samples, batch_size)
             ):
@@ -193,7 +193,7 @@ class SentenceSentimentTrain:
             # Evaluate on validation set at the end of the epoch
             validation_predictions = []
             p_val= []
-            
+
             if data_val is not None:
                 (X_val, y_val) = data_val
                 model.eval()

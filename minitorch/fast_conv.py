@@ -1,14 +1,11 @@
 from typing import Tuple, TypeVar, Any
 
-import numpy as np
 from numba import prange
 from numba import njit as _njit
 
 from .autodiff import Context
 from .tensor import Tensor
 from .tensor_data import (
-    MAX_DIMS,
-    Index,
     Shape,
     Strides,
     Storage,
@@ -99,18 +96,16 @@ def _tensor_conv1d(
                     for kw_i in range(kw):
                         iw = ow + kw_i if not reverse else ow - kw_i
                         if 0 <= iw < width:
-                            i_idx = (
-                                b * s1[0] + ic * s1[1] + iw * s1[2]
-                            )
-                            w_idx = (
-                                oc * s2[0] + ic * s2[1] + kw_i * s2[2]
-                            )
+                            i_idx = b * s1[0] + ic * s1[1] + iw * s1[2]
+                            w_idx = oc * s2[0] + ic * s2[1] + kw_i * s2[2]
                             accum += input[i_idx] * weight[w_idx]
 
                 o_idx = b * out_strides[0] + oc * out_strides[1] + ow * out_strides[2]
                 out[o_idx] = accum
 
+
 tensor_conv1d = njit(_tensor_conv1d, parallel=True)
+
 
 class Conv1dFun(Function):
     @staticmethod
@@ -230,11 +225,10 @@ def _tensor_conv2d(
 
     s1 = input_strides
     s2 = weight_strides
-    #s3 = out_strides
-    
+    # s3 = out_strides
+
     s10, s11, s12, s13 = s1[0], s1[1], s1[2], s1[3]
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
-
 
     for b in prange(batch):
         for oc in range(out_channels):
@@ -248,12 +242,7 @@ def _tensor_conv2d(
                                 iw = ow + kw_idx if not reverse else ow - kw_idx
 
                                 if 0 <= ih < height and 0 <= iw < width:
-                                    inp_idx = (
-                                        b * s10
-                                        + ic * s11
-                                        + ih * s12
-                                        + iw * s13
-                                    )
+                                    inp_idx = b * s10 + ic * s11 + ih * s12 + iw * s13
                                     w_idx = (
                                         oc * s20
                                         + ic * s21
@@ -270,8 +259,8 @@ def _tensor_conv2d(
                     )
                     out[out_idx] = accum
 
-tensor_conv2d = njit(_tensor_conv2d, parallel=True, fastmath=True)
 
+tensor_conv2d = njit(_tensor_conv2d, parallel=True, fastmath=True)
 
 
 class Conv2dFun(Function):
