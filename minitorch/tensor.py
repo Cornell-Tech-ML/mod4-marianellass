@@ -105,9 +105,11 @@ class Tensor:
         return self._tensor.dims
 
     def requires_grad_(self, x: bool) -> None:
+        """Gives the history of gradient."""
         self.history = History()
 
     def requires_grad(self) -> bool:
+        """Returns grad."""
         return self.history is not None
 
     def to_numpy(self) -> npt.NDArray[np.float64]:
@@ -204,6 +206,7 @@ class Tensor:
         # END CODE CHANGE (2021)
 
     def zeros(self, shape: Optional[UserShape] = None) -> Tensor:
+        """Returns tensor of zeros."""
         def zero(shape: UserShape) -> Tensor:
             return Tensor.make(
                 [0.0] * int(operators.prod(shape)), shape, backend=self.backend
@@ -249,14 +252,17 @@ class Tensor:
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
+        """Returns true if constant."""
         return self.history is None
 
     @property
     def parents(self) -> Iterable[Variable]:
+        """Returns Parents."""
         assert self.history is not None
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """Returns chain rule."""
         h = self.history
         assert h is not None
         assert h.last_fn is not None
@@ -270,6 +276,7 @@ class Tensor:
         ]
 
     def backward(self, grad_output: Optional[Tensor] = None) -> None:
+        """Backpropfor grad."""
         if grad_output is None:
             assert self.shape == (1,), "Must provide grad_output if non-scalar"
             grad_output = Tensor.make([1.0], (1,), backend=self.backend)
